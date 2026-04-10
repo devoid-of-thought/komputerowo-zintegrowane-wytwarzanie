@@ -33,7 +33,7 @@ vector<operacja> wczytajDane(const string &path)
             while (ss >> liczba)            {
                 wiersz.push_back(liczba);
             }
-            op.index = index;
+            op.index = index++;
             op.r = wiersz[0];
             op.p = wiersz[1];
             op.q = wiersz[2];
@@ -77,31 +77,32 @@ vector<pair<int, operacja>> manageTime(const vector<operacja> &dane)
     while (!dostepne.empty())
     {
         vector<operacja> gotowe;
-        for (size_t i = 0; i < dostepne.size(); i++)
+        for (const auto &op : dostepne)
         {
-            if (dostepne[i].r <= czas)
+            if (op.r <= czas)
             {
-                gotowe.push_back(dostepne[i]);
+                gotowe.push_back(op);
             }
         }
-        if (gotowe.empty())
+        if (!gotowe.empty())
+        {
+            auto max_q_op = *max_element(gotowe.begin(), gotowe.end(), [](const operacja &a, const operacja &b) {
+                return a.q < b.q;
+            });
+            kolejnosc.push_back({max_q_op.index, max_q_op});
+            czas += max_q_op.p;
+            dostepne.erase(remove_if(dostepne.begin(), dostepne.end(), [&](const operacja &op) {
+                return op.index == max_q_op.index;
+            }), dostepne.end());
+        }
+        else
         {
             czas = dostepne[0].r;
-            kolejnosc.push_back({dostepne[0].index, dostepne[0]});
-            dostepne.erase(dostepne.begin());
-            continue;
         }
-      
-        auto maxQ = max_element(gotowe.begin(), gotowe.end(), [](const operacja &a, const operacja &b) {
-            return a.q < b.q;
-        });
-        kolejnosc.push_back({maxQ->index, *maxQ});
-        dostepne.erase(remove_if(dostepne.begin(), dostepne.end(), [&](const operacja &op) {
-            return op.index == maxQ->index;
-        }), dostepne.end());
     }
     return kolejnosc;
 }
+
 int main()
 {
     auto start = chrono::high_resolution_clock::now();
@@ -111,10 +112,18 @@ int main()
     vector<operacja> dane4 = wczytajDane("data4.txt");
 
     int timeSum = 0;
-    timeSum += obliczCmax(dane1, manageTime(dane1));
-    timeSum += obliczCmax(dane2, manageTime(dane2));
-    timeSum += obliczCmax(dane3, manageTime(dane3));
-    timeSum += obliczCmax(dane4, manageTime(dane4));
+    int cmax1 = obliczCmax(dane1, manageTime(dane1));
+    cout << "Cmax dla data1.txt: " << cmax1 << endl;
+    timeSum += cmax1;
+    int cmax2 = obliczCmax(dane2, manageTime(dane2));
+    cout << "Cmax dla data2.txt: " << cmax2 << endl;
+    timeSum += cmax2;
+    int cmax3 = obliczCmax(dane3, manageTime(dane3));
+    cout << "Cmax dla data3.txt: " << cmax3 << endl;
+    timeSum += cmax3;
+    int cmax4 = obliczCmax(dane4, manageTime(dane4));
+    cout << "Cmax dla data4.txt: " << cmax4 << endl;
+    timeSum += cmax4;
     cout << "Wynik: " << timeSum << endl;
     auto stop = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
